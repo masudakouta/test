@@ -31,8 +31,12 @@ typedef struct
 	D3DXVECTOR3 move;		// ˆÚ“®—Ê
 	D3DXVECTOR3 rot;		// Œ»İ‚ÌŒü‚«
 	D3DXVECTOR3 rotDest;	// –Ú“I‚ÌŒü‚«
-	float fRadius;			// ”¼Œa
-	int nIdxShadow;			// ‰eID
+	float		fRadius;	// ”¼Œa
+	float		Angul;		// Šp“x
+	int			nIdxShadow;	// ‰eID
+	float		cntFreme;
+	float		frame;
+	D3DXVECTOR3 worldPos;	// 
 } WEAPON;
 
 

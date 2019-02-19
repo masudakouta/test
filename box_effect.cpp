@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// パーティクル処理 [particle.cpp]
+// ボックスエフェクト処理 [box_effect.cpp]
 // Author : 増田　光汰
 //
 //=============================================================================
@@ -9,11 +9,12 @@
 #include "camera.h"
 #include "shadow.h"
 #include "player.h"
+#include "meshfield.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define	MODEL_PARTICLE		"data/MODEL/Effect_Box.x"	// 読み込むモデルファイル名
+#define	MODEL_PARTICLE		"data/MODEL/Effect_Box.x"		// 読み込むモデルファイル名
 #define	TEXTURE_BOX_EFFECT	"data/TEXTURE/effect_box.png"	// 読み込むテクスチャファイル名
 #define	PARTICLE_SIZE_X		(50.0f)							// ビルボードの幅
 #define	PARTICLE_SIZE_Y		(50.0f)							// ビルボードの高さ
@@ -21,16 +22,11 @@
 
 #define	MAX_PARTICLE			(512)						// ビルボード最大数
 
-#define	DISP_SHADOW				// 影の表示
-//#undef DISP_SHADOW
+#define	DISP_SHADOW											// 影の表示
 
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-//HRESULT MakeVertexBox_Effect(LPDIRECT3DDEVICE9 pDevice);
-//void SetVertexBox_Effect(int nIdxBox_Effect, float fSizeX, float fSizeY);
-//void SetColorBox_Effect(int nIdxBox_Effect, D3DXCOLOR col);
-
 int						PTAlpha;						// アルファテストの閾値
 
 bool					PTAlpaTest;						// アルファテストON/OFF
@@ -45,7 +41,7 @@ DWORD					NumMatBox_Effect;				// マテリアル情報の数
 D3DXMATRIX				g_mtxWorldBox_Effect;			// ワールドマトリックス
 
 
-PARTICLE				g_aBox_Effect[MAX_PARTICLE];		// パーティクルワーク
+BOX_PARTICLE				g_aBox_Effect[MAX_PARTICLE];		// パーティクルワーク
 D3DXVECTOR3				g_posBase;						// ビルボード発生位置
 float					g_fWidthBase = 5.0f;			// 基準の幅
 float					g_fHeightBase = 10.0f;			// 基準の高さ
@@ -58,15 +54,12 @@ HRESULT InitBox_Effect(void)
 {
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
-	// 頂点情報の作成
-	//MakeVertexBox_Effect(pDevice);
-
 	// テクスチャの読み込み
-	D3DXCreateTextureFromFile(pDevice,						// デバイスへのポインタ
-		TEXTURE_BOX_EFFECT,			// ファイルの名前
-		&g_pD3DTextureBox_Effect);	// 読み込むメモリー
+	D3DXCreateTextureFromFile(pDevice,			// デバイスへのポインタ
+		TEXTURE_BOX_EFFECT,						// ファイルの名前
+		&g_pD3DTextureBox_Effect);				// 読み込むメモリー
 	// Xファイルの読み込み
-	if (FAILED(D3DXLoadMeshFromX/*初期化もしてくれる*/(MODEL_PARTICLE,		// 読み込むモデルファイル名(Xファイル)
+	if (FAILED(D3DXLoadMeshFromX(MODEL_PARTICLE,// 読み込むモデルファイル名(Xファイル)
 		D3DXMESH_SYSTEMMEM,						// メッシュの作成オプションを指定
 		pDevice,								// IDirect3DDevice9インターフェイスへのポインタ
 		NULL,									// 隣接性データを含むバッファへのポインタ
@@ -120,12 +113,6 @@ void UninitBox_Effect(void)
 		D3DXBuffMatBox_Effect->Release();
 		D3DXBuffMatBox_Effect = NULL;
 	}
-
-	//if (g_pD3DVtxBuffBox_Effect != NULL)
-	//{// 頂点バッファの開放
-	//	g_pD3DVtxBuffBox_Effect->Release();
-	//	g_pD3DVtxBuffBox_Effect = NULL;
-	//}
 }
 
 //=============================================================================
@@ -134,7 +121,7 @@ void UninitBox_Effect(void)
 void UpdateBox_Effect(void)
 {
 	D3DXVECTOR3 rotCamera;
-	PARTICLE *Box_Effect = g_aBox_Effect;
+	BOX_PARTICLE *Box_Effect = g_aBox_Effect;
 	// カメラの回転を取得
 	rotCamera = GetRotCamera();
 	// アルファテストON/OFF
@@ -143,111 +130,29 @@ void UpdateBox_Effect(void)
 		PTAlpaTest = PTAlpaTest ? false : true;
 	}
 
-	//if(GetKeyboardPress(DIK_LEFT))
-	//{
-	//	if(GetKeyboardPress(DIK_UP))
-	//	{// 左前移動
-	//		g_posBase.x -= sinf(rotCamera.y + D3DX_PI * 0.75f) * VALUE_MOVE_PARTICLE;
-	//		g_posBase.z -= cosf(rotCamera.y + D3DX_PI * 0.75f) * VALUE_MOVE_PARTICLE;
-	//	}
-	//	else if(GetKeyboardPress(DIK_DOWN))
-	//	{// 左後移動
-	//		g_posBase.x -= sinf(rotCamera.y + D3DX_PI * 0.25f) * VALUE_MOVE_PARTICLE;
-	//		g_posBase.z -= cosf(rotCamera.y + D3DX_PI * 0.25f) * VALUE_MOVE_PARTICLE;
-	//	}
-	//	else
-	//	{// 左移動
-	//		g_posBase.x -= sinf(rotCamera.y + D3DX_PI * 0.50f) * VALUE_MOVE_PARTICLE;
-	//		g_posBase.z -= cosf(rotCamera.y + D3DX_PI * 0.50f) * VALUE_MOVE_PARTICLE;
-	//	}
-	//}
-	//else if(GetKeyboardPress(DIK_RIGHT))
-	//{
-	//	if(GetKeyboardPress(DIK_UP))
-	//	{// 右前移動
-	//		g_posBase.x -= sinf(rotCamera.y - D3DX_PI * 0.75f) * VALUE_MOVE_PARTICLE;
-	//		g_posBase.z -= cosf(rotCamera.y - D3DX_PI * 0.75f) * VALUE_MOVE_PARTICLE;
-	//	}
-	//	else if(GetKeyboardPress(DIK_DOWN))
-	//	{// 右後移動
-	//		g_posBase.x -= sinf(rotCamera.y - D3DX_PI * 0.25f) * VALUE_MOVE_PARTICLE;
-	//		g_posBase.z -= cosf(rotCamera.y - D3DX_PI * 0.25f) * VALUE_MOVE_PARTICLE;
-	//	}
-	//	else
-	//	{// 右移動
-	//		g_posBase.x -= sinf(rotCamera.y - D3DX_PI * 0.50f) * VALUE_MOVE_PARTICLE;
-	//		g_posBase.z -= cosf(rotCamera.y - D3DX_PI * 0.50f) * VALUE_MOVE_PARTICLE;
-	//	}
-	//}
-	//else if(GetKeyboardPress(DIK_UP))
-	//{// 前移動
-	//	g_posBase.x -= sinf(D3DX_PI + rotCamera.y) * VALUE_MOVE_PARTICLE;
-	//	g_posBase.z -= cosf(D3DX_PI + rotCamera.y) * VALUE_MOVE_PARTICLE;
-	//}
-	//else if(GetKeyboardPress(DIK_DOWN))
-	//{// 後移動
-	//	g_posBase.x -= sinf(rotCamera.y) * VALUE_MOVE_PARTICLE;
-	//	g_posBase.z -= cosf(rotCamera.y) * VALUE_MOVE_PARTICLE;
-	//}
-
-	//if (GetKeyboardPress(DIK_1))
-	//{
-	//	g_fWidthBase -= 0.1f;
-	//	if (g_fWidthBase < 2.0f)
-	//	{
-	//		g_fWidthBase = 2.0f;
-	//	}
-	//}
-	//if (GetKeyboardPress(DIK_2))
-	//{
-	//	g_fWidthBase += 0.1f;
-	//	if (g_fWidthBase > 10.0f)
-	//	{
-	//		g_fWidthBase = 10.0f;
-	//	}
-	//}
-	//if (GetKeyboardPress(DIK_3))
-	//{
-	//	g_fHeightBase -= 0.1f;
-	//	if (g_fHeightBase < 5.0f)
-	//	{
-	//		g_fHeightBase = 5.0f;
-	//	}
-	//}
-	//if (GetKeyboardPress(DIK_4))
-	//{
-	//	g_fHeightBase += 0.1f;
-	//	if (g_fHeightBase > 15.0f)
-	//	{
-	//		g_fHeightBase = 15.0f;
-	//	}
-	//}
-
-	//if (GetKeyboardTrigger(DIK_P))
-	//{
-	//	g_bPause = g_bPause ? false : true;
-	//}
 
 	if (g_bPause == false)
 	{
 		for (int nCntBox_Effect = 0; nCntBox_Effect < MAX_PARTICLE; nCntBox_Effect++, Box_Effect++)
 		{
+
 			if (g_aBox_Effect[nCntBox_Effect].bUse)
 			{// 使用中
+				float t = Get(Box_Effect->pos);
 				g_aBox_Effect[nCntBox_Effect].pos.x += g_aBox_Effect[nCntBox_Effect].move.x;
 				g_aBox_Effect[nCntBox_Effect].pos.z += g_aBox_Effect[nCntBox_Effect].move.z;
 
 				g_aBox_Effect[nCntBox_Effect].pos.y += g_aBox_Effect[nCntBox_Effect].move.y;
-				if (g_aBox_Effect[nCntBox_Effect].pos.y <= g_aBox_Effect[nCntBox_Effect].fSizeY / 2)
+				if (g_aBox_Effect[nCntBox_Effect].pos.y < t)
 				{// 着地した
-					g_aBox_Effect[nCntBox_Effect].pos.y = g_aBox_Effect[nCntBox_Effect].fSizeY / 2;
+					g_aBox_Effect[nCntBox_Effect].pos.y = t;
 					g_aBox_Effect[nCntBox_Effect].move.y = -g_aBox_Effect[nCntBox_Effect].move.y * 0.75f;
 				}
 
 				g_aBox_Effect[nCntBox_Effect].move.x += (0.0f - g_aBox_Effect[nCntBox_Effect].move.x) * 0.015f;
 				g_aBox_Effect[nCntBox_Effect].move.y -= 0.25f;
 				g_aBox_Effect[nCntBox_Effect].move.z += (0.0f - g_aBox_Effect[nCntBox_Effect].move.z) * 0.015f;
-
+				//Box_Effect->pos.y = Get(Box_Effect->pos);
 #ifdef DISP_SHADOW
 				if (g_aBox_Effect[nCntBox_Effect].nIdxShadow != -1)
 				{// 影使用中
@@ -269,9 +174,6 @@ void UpdateBox_Effect(void)
 					{
 						colA = 0.0f;
 					}
-
-					// 影の色の設定
-					//SetColorShadow(g_aBox_Effect[nCntBox_Effect].nIdxShadow, D3DXCOLOR(0.15f, 0.15f, 0.15f, colA));
 				}
 #endif
 
@@ -300,31 +202,29 @@ void UpdateBox_Effect(void)
 							g_aBox_Effect[nCntBox_Effect].col.a = 0.0f;
 						}
 					}
-
-					// 色の設定
-					//SetColorBox_Effect(nCntBox_Effect, g_aBox_Effect[nCntBox_Effect].col);
 				}
 			}
+			//Box_Effect->pos.y = Get(Box_Effect->pos);
 		}
 
 		// パーティクル発生
 		//if((rand() % 2) == 0)
 		{
-			float fAngle, fLength;
+			float fAngle, fLength, tAngle;
 			int nLife;
 			float fSize;
 
 			Box_Effect->pos = g_posBase;
 
-			fAngle = (float)(rand() % 30 - 15) / 100.0f;
-			fLength = rand() % (int)(g_fWidthBase * 200) / 100.0f - g_fWidthBase;
-
+			fAngle = (float)(rand() % 30 - 15) / 50.0f;
+			fLength = rand() % (int)(g_fWidthBase * 300) / 150.0f - g_fWidthBase;
+			tAngle = (float)(rand() % 30 + 15) * 50.0f;
 			//動き
-			Box_Effect->move.x = sinf(fAngle) * fLength;
-			Box_Effect->move.y = rand() % 30 / 30.0f + 7.0f;
-			Box_Effect->move.z = cosf(fAngle) * 0.1f;
+			Box_Effect->move.x = sinf(fAngle) * fLength * 1.4f;
+			Box_Effect->move.y = rand() % 30 / 70.0f + 7.0f;
+			Box_Effect->move.z = cosf(tAngle) * 1.4f;
 
-			nLife = rand() % 100 + 10;
+			nLife = rand() % 150 + 10;
 
 			fSize = (float)(rand() % 3 + 2);
 
@@ -398,110 +298,6 @@ void DrawBox_Effect(void)
 //=============================================================================
 // 頂点情報の作成
 //=============================================================================
-//HRESULT MakeVertexBox_Effect(LPDIRECT3DDEVICE9 pDevice)
-//{
-//	// オブジェクトの頂点バッファを生成
-//	if (FAILED(pDevice->CreateVertexBuffer(sizeof(VERTEX_3D) * NUM_VERTEX * MAX_PARTICLE,	// 頂点データ用に確保するバッファサイズ(バイト単位)
-//		D3DUSAGE_WRITEONLY,							// 頂点バッファの使用法　
-//		FVF_VERTEX_3D,								// 使用する頂点フォーマット
-//		D3DPOOL_MANAGED,							// リソースのバッファを保持するメモリクラスを指定
-//		&g_pD3DVtxBuffBox_Effect,					// 頂点バッファインターフェースへのポインタ
-//		NULL)))										// NULLに設定
-//	{
-//		return E_FAIL;
-//	}
-//
-//	{//頂点バッファの中身を埋める
-//		VERTEX_3D *pVtx;
-//
-//		// 頂点データの範囲をロックし、頂点バッファへのポインタを取得
-//		g_pD3DVtxBuffBox_Effect->Lock(0, 0, (void**)&pVtx, 0);
-//
-//		for (int nCntBox_Effect = 0; nCntBox_Effect < MAX_PARTICLE; nCntBox_Effect++, pVtx += 4)
-//		{
-//			// 頂点座標の設定
-//			pVtx[0].vtx = D3DXVECTOR3(-PARTICLE_SIZE_X / 2, -PARTICLE_SIZE_Y / 2, 0.0f);
-//			pVtx[1].vtx = D3DXVECTOR3(PARTICLE_SIZE_X / 2, -PARTICLE_SIZE_Y / 2, 0.0f);
-//			pVtx[2].vtx = D3DXVECTOR3(-PARTICLE_SIZE_X / 2, PARTICLE_SIZE_Y / 2, 0.0f);
-//			pVtx[3].vtx = D3DXVECTOR3(PARTICLE_SIZE_X / 2, PARTICLE_SIZE_Y / 2, 0.0f);
-//
-//			// 法線の設定
-//			pVtx[0].nor = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-//			pVtx[1].nor = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-//			pVtx[2].nor = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-//			pVtx[3].nor = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-//
-//			// 反射光の設定
-//			pVtx[0].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-//			pVtx[1].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-//			pVtx[2].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-//			pVtx[3].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-//
-//			// テクスチャ座標の設定
-//			pVtx[0].tex = D3DXVECTOR2(0.0f, 0.0f);
-//			pVtx[1].tex = D3DXVECTOR2(1.0f, 0.0f);
-//			pVtx[2].tex = D3DXVECTOR2(0.0f, 1.0f);
-//			pVtx[3].tex = D3DXVECTOR2(1.0f, 1.0f);
-//		}
-//
-//		// 頂点データをアンロックする
-//		g_pD3DVtxBuffBox_Effect->Unlock();
-//	}
-//
-//	return S_OK;
-//}
-
-//=============================================================================
-// 頂点座標の設定
-//=============================================================================
-//void SetVertexBox_Effect(int nIdxBox_Effect, float fSizeX, float fSizeY)
-//{
-//	{//頂点バッファの中身を埋める
-//		VERTEX_3D *pVtx;
-//
-//		// 頂点データの範囲をロックし、頂点バッファへのポインタを取得
-//		g_pD3DVtxBuffBox_Effect->Lock(0, 0, (void**)&pVtx, 0);
-//
-//		pVtx += (nIdxBox_Effect * 4);
-//
-//		// 頂点座標の設定
-//		pVtx[0].vtx = D3DXVECTOR3(-fSizeX / 2, -fSizeY / 2, 0.0f);
-//		pVtx[1].vtx = D3DXVECTOR3(-fSizeX / 2, fSizeY / 2, 0.0f);
-//		pVtx[2].vtx = D3DXVECTOR3(fSizeX / 2, -fSizeY / 2, 0.0f);
-//		pVtx[3].vtx = D3DXVECTOR3(fSizeX / 2, fSizeY / 2, 0.0f);
-//
-//		// 頂点データをアンロックする
-//		g_pD3DVtxBuffBox_Effect->Unlock();
-//	}
-//}
-//
-//=============================================================================
-// 頂点カラーの設定
-//=============================================================================
-//void SetColorBox_Effect(int nIdxBox_Effect, D3DXCOLOR col)
-//{
-//	{//頂点バッファの中身を埋める
-//		VERTEX_3D *pVtx;
-//
-//		// 頂点データの範囲をロックし、頂点バッファへのポインタを取得
-//		g_pD3DVtxBuffBox_Effect->Lock(0, 0, (void**)&pVtx, 0);
-//
-//		pVtx += (nIdxBox_Effect * 4);
-//
-//		// 頂点座標の設定
-//		pVtx[0].diffuse =
-//			pVtx[1].diffuse =
-//			pVtx[2].diffuse =
-//			pVtx[3].diffuse = col;
-//
-//		// 頂点データをアンロックする
-//		g_pD3DVtxBuffBox_Effect->Unlock();
-//	}
-//}
-
-//=============================================================================
-// 頂点情報の作成
-//=============================================================================
 int SetBox_Effect(D3DXVECTOR3 pos, D3DXVECTOR3 move, D3DXCOLOR col, float fSizeX, float fSizeY, int nLife)
 {
 	int nIdxBox_Effect = -1;
@@ -541,9 +337,9 @@ int SetBox_Effect(D3DXVECTOR3 pos, D3DXVECTOR3 move, D3DXCOLOR col, float fSizeX
 
 }
 //=============================================================================
-// エフェクトを取得
+// ボックスエフェクトを取得
 //=============================================================================
-PARTICLE *GetBox_Effect(int pno)
+BOX_PARTICLE *GetBox_Effect(int pno)
 {
 	return &g_aBox_Effect[pno];
 }

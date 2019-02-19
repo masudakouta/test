@@ -142,6 +142,12 @@ void DrawLife(void)
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
 	// テクスチャの設定
+	pDevice->SetTexture(0, g_pD3DTextureLife[1]);
+
+	// ポリゴンの描画
+	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (NUM_PLACE * 4), NUM_POLYGON);
+
+	// テクスチャの設定
 	pDevice->SetTexture(0, g_pD3DTextureLife[0]);
 
 	// ポリゴンの描画
@@ -151,11 +157,6 @@ void DrawLife(void)
 
 	}
 
-	// テクスチャの設定
-	pDevice->SetTexture(0, g_pD3DTextureLife[1]);
-
-	// ポリゴンの描画
-	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (NUM_PLACE * 4), NUM_POLYGON);
 
 	//PLAYER *player = GetPlayer(0);
 	//float val = (float)player->life / PLAYER_LIFEMAX;
@@ -226,10 +227,10 @@ HRESULT MakeVertexLife(LPDIRECT3DDEVICE9 pDevice)
 		pVtx[3].rhw = 1.0f;
 
 		// 反射光の設定
-		pVtx[0].diffuse = D3DXCOLOR(1.0f, 0.0f, 1.0f, 1.0f);
-		pVtx[1].diffuse = D3DXCOLOR(1.0f, 0.0f, 1.0f, 1.0f);
-		pVtx[2].diffuse = D3DXCOLOR(1.0f, 0.0f, 1.0f, 1.0f);
-		pVtx[3].diffuse = D3DXCOLOR(1.0f, 0.0f, 1.0f, 1.0f);
+		pVtx[0].diffuse = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+		pVtx[1].diffuse = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+		pVtx[2].diffuse = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+		pVtx[3].diffuse = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 
 		// テクスチャ座標の設定
 		pVtx[0].tex = D3DXVECTOR2(0.0f, 0.0f);

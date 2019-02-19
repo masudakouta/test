@@ -161,7 +161,7 @@ void DrawShadow(void)
 			pDevice->SetTexture(0, g_pD3DTextureShadow);
 
 			// ƒ|ƒŠƒSƒ“‚Ì•`‰æ
-			pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (nCntShadow * 4), NUM_POLYGON);
+			//pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (nCntShadow * 4), NUM_POLYGON);
 		}
 	}
 	pDevice->SetRenderState(D3DRS_FOGENABLE, TRUE);								// 

@@ -106,11 +106,54 @@ void UpdateCamera(void)
 	g_posCameraP.x += (g_posCameraPDest.x - g_posCameraP.x) * RATE_CHASE_CAMERA_P;
 	g_posCameraP.y += (g_posCameraPDest.y - g_posCameraP.y) * RATE_CHASE_CAMERA_P;
 	g_posCameraP.z += (g_posCameraPDest.z - g_posCameraP.z) * RATE_CHASE_CAMERA_P;
+	//g_posCameraP.x = g_posCameraR.x - sinf(g_rotCamera.y) * g_fLengthIntervalCamera;
+	//g_posCameraP.y = g_posCameraR.y + 50.0f/*sinf(rotCamera.y) * fLengthIntervalCamera*/;
+	//g_posCameraP.z = g_posCameraR.z - cosf(g_rotCamera.y) * g_fLengthIntervalCamera;
 
 	// 注視点の補正
 	g_posCameraR.x += (g_posCameraRDest.x - g_posCameraR.x) * RATE_CHASE_CAMERA_R;
 	g_posCameraR.y += (g_posCameraRDest.y - g_posCameraR.y) * RATE_CHASE_CAMERA_R;
 	g_posCameraR.z += (g_posCameraRDest.z - g_posCameraR.z) * RATE_CHASE_CAMERA_R;
+	//if (GetKeyboardPress(DIK_RIGHT))
+	//{// 視点旋回「左」
+	//	g_rotCamera.y += VALUE_ROTATE_CAMERA;
+	//	if (g_rotCamera.y > D3DX_PI)
+	//	{
+	//		g_rotCamera.y -= D3DX_PI * 2.0f;
+	//	}
+
+	//	g_posCameraP.x = g_posCameraR.x - sinf(g_rotCamera.y) * g_fLengthIntervalCamera;
+	//	g_posCameraP.z = g_posCameraR.z - cosf(g_rotCamera.y) * g_fLengthIntervalCamera;
+	//}
+	//if (GetKeyboardPress(DIK_LEFT))
+	//{// 視点旋回「右」
+	//	g_rotCamera.y -= VALUE_ROTATE_CAMERA;
+	//	if (g_rotCamera.y < -D3DX_PI)
+	//	{
+	//		g_rotCamera.y += D3DX_PI * 2.0f;
+	//	}
+
+	//	g_posCameraP.x = g_posCameraR.x - sinf(g_rotCamera.y) * g_fLengthIntervalCamera;
+	//	g_posCameraP.z = g_posCameraR.z - cosf(g_rotCamera.y) * g_fLengthIntervalCamera;
+	//}
+
+	if (GetKeyboardPress(DIK_9))
+	{
+		g_posCameraP.z += 1.0f;
+	}
+	if (GetKeyboardPress(DIK_0))
+	{// 注視点と視点との距離
+		g_rotCamera.x -= VALUE_ROTATE_CAMERA;
+		//g_rotCamera.y += 0.02f;
+		if (g_rotCamera.x < -D3DX_PI)
+		{
+			g_rotCamera.x += D3DX_PI * 2.0f;
+		}
+		g_posCameraP.y = g_posCameraR.y - sinf(g_rotCamera.x) * g_fLengthIntervalCamera;
+		g_posCameraP.z = g_posCameraR.z - cosf(g_rotCamera.x) * g_fLengthIntervalCamera;
+
+	}
+
 }
 
 //=============================================================================
@@ -162,4 +205,31 @@ D3DXMATRIX GetMtxView(void)
 {
 	return g_mtxView;
 }
+//=============================================================================
+// スクリーン座標をワールド座標に変換 関数
+//=============================================================================
+D3DXVECTOR3* CalcScreenToWorld(D3DXVECTOR3* pout,
+								int Sx,			// スクリーンX座標
+								int Sy,			// スクリーンY座標
+								float fZ,		// 射影空間でのZ値（0～1）
+								int Screen_w,
+								int Screen_h,
+								D3DXMATRIX* View,
+								D3DXMATRIX* Prj
+								)
+{
+	// 各行列の逆行列を算出
+	D3DXMATRIX InvView, InvPrj, VP, InvViewport;
+	D3DXMatrixInverse(&InvView, NULL, View);
+	D3DXMatrixInverse(&InvPrj, NULL, Prj);
+	D3DXMatrixIdentity(&VP);
+	VP._11 = Screen_w / 2.0f; VP._22 = -Screen_h / 2.0f;
+	VP._41 = Screen_w / 2.0f; VP._42 = Screen_h / 2.0f;
+	D3DXMatrixInverse(&InvViewport, NULL, &VP);
 
+	// 逆変換
+	D3DXMATRIX tmp = InvViewport * InvPrj * InvView;
+	D3DXVec3TransformCoord(pout, &D3DXVECTOR3(Sx, Sy, fZ), &tmp);
+
+	return pout;
+}

@@ -12,9 +12,13 @@
 #include "effect.h"
 #include "item.h"
 #include "score.h"
-#include "sound.h"
 #include "meshfield.h"
 #include "fade.h"
+#include "box_effect.h"
+#include "particle.h"
+#include "bezier_particle.h"
+#include "score_effect.h"
+#include "explosion.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -32,8 +36,8 @@
 //剣
 #define PLAYER_WEAPON		"data/PLAYER/weapon.x"		// 読み込むモデル名
 #define TEXTURE_WEAPON		"data/PLAYER/weapon.png"	// 読み込むモデル名
-#define WEAPON_RADIUS		(10.0f)						// 半径
-#define	VALUE_ROTATE_WEAPON	(D3DX_PI * 0.025f)			// 回転速度
+#define WEAPON_RADIUS		(20.0f)						// 半径
+#define	VALUE_ROTATE_WEAPON	(D3DX_PI * 5.025f)			// 回転速度
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -54,7 +58,7 @@ LPDIRECT3DTEXTURE9	D3DTextureWeapon;		// テクスチャ読み込み場所
 LPD3DXMESH			MeshWeapon;				// ID3DXMeshインターフェイスへのポインタ
 LPD3DXBUFFER		D3DXMatBuffWeapon;		// メッシュのマテリアル情報を格納
 DWORD				NumMatWeapon;			// 属性情報の総数
-
+float				fLengthIntervalWeapon;
 D3DXMATRIX			g_mtxWorldPlayer;			// ワールドマトリックス
 D3DXMATRIX			mtxWorldWeapon;				// 右ワールドマトリックス
 
@@ -86,7 +90,8 @@ HRESULT InitPlayer(void)
 	MeshWeapon = NULL;
 	D3DXMatBuffWeapon = NULL;
 	weapon.pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	weapon.rot = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	weapon.rot = D3DXVECTOR3(3.4f, 0.0f, 0.0f);
+	weapon.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	weapon.fRadius = WEAPON_RADIUS;
 
 
@@ -225,6 +230,7 @@ void UpdatePlayer(void)
 			g_player.move.x -= sinf(rotCamera.y - D3DX_PI * 0.75f) * VALUE_MOVE_PLAYER;
 			g_player.move.z -= cosf(rotCamera.y - D3DX_PI * 0.75f) * VALUE_MOVE_PLAYER;
 
+
 			g_player.rotDest.y = rotCamera.y - D3DX_PI * 0.75f;
 		}
 		else if(GetKeyboardPress(DIK_S))
@@ -248,6 +254,7 @@ void UpdatePlayer(void)
 		g_player.move.z -= cosf(D3DX_PI + rotCamera.y) * VALUE_MOVE_PLAYER;
 
 		g_player.rotDest.y = D3DX_PI + rotCamera.y;
+
 	}
 	else if(GetKeyboardPress(DIK_S))
 	{// 後移動
@@ -256,6 +263,7 @@ void UpdatePlayer(void)
 
 		g_player.rotDest.y = rotCamera.y;
 	}
+
 
 	// 弾発射
 	if(GetKeyboardTrigger(DIK_RETURN))
@@ -300,6 +308,17 @@ void UpdatePlayer(void)
 		g_player.rot.y += D3DX_PI * 2.0f;
 	}
 
+
+	weapon.rot.y += fDiffRotY * RATE_ROTATE_PLAYER;
+	if (weapon.rot.y > D3DX_PI)
+	{
+		weapon.rot.y -= D3DX_PI * 2.0f;
+	}
+	if (weapon.rot.y < -D3DX_PI)
+	{
+		weapon.rot.y += D3DX_PI * 2.0f;
+	}
+
 	/// 位置移動
 	g_player.pos.x += g_player.move.x;
 	g_player.pos.y += g_player.move.y;
@@ -335,6 +354,10 @@ void UpdatePlayer(void)
 	g_player.move.y += (0.0f - g_player.move.y) * RATE_MOVE_PLAYER;
 	g_player.move.z += (0.0f - g_player.move.z) * RATE_MOVE_PLAYER;
 
+	weapon.move.x += (0.0f - weapon.move.x) * RATE_MOVE_PLAYER;
+	weapon.move.y += (0.0f - weapon.move.y) * RATE_MOVE_PLAYER;
+	weapon.move.z += (0.0f - weapon.move.z) * RATE_MOVE_PLAYER;
+
 
 	if((g_player.move.x * g_player.move.x
 	+ g_player.move.y * g_player.move.y
@@ -355,36 +378,54 @@ void UpdatePlayer(void)
 		//					D3DXCOLOR(0.45f, 0.45f, 0.05f, 0.15f), 5.0f, 5.0f, 20);
 	}
 
-	// アイテムとの当たり判定
+	// エネミーとの当たり判定
 	{
 		ITEM *pItem;
+		BOX_PARTICLE *Box_Effect = GetBox_Effect(0);
+		PARTICLE *Particle = GetParticlet(0);
 
-		// エネミーとの当たり判定
+		float fLength;
+
 		pItem = GetItem();
-		for(int nCntItem = 0; nCntItem < MAX_ITEM; nCntItem++, pItem++)
+		if (GetKeyboardTrigger(DIK_P))
 		{
-			if(pItem->bUse == true)
+				weapon.rot.x -= 15.0f;
+			for (int nCntItem = 0; nCntItem < MAX_ITEM; nCntItem++, pItem++)
 			{
-				float fLength;
-
-				fLength = (weapon.pos.x - pItem->pos.x) * (weapon.pos.x - pItem->pos.x)
-							+ (weapon.pos.y - pItem->pos.y) * (weapon.pos.y - pItem->pos.y) *2
-							+ (weapon.pos.z - pItem->pos.z) * (weapon.pos.z - pItem->pos.z);
-				if(fLength < (weapon.fRadius + pItem->fRadius) * (weapon.fRadius + pItem->fRadius))
+				if (pItem->bUse == true)
 				{
+					float fLength;
 
-					// スコア加算
-					ChangeScore(100);
-					pItem->bUse = false;
-					// SE再生
-					//PlaySound(SOUND_LABEL_SE_COIN);
+					fLength = (weapon.worldPos.x - pItem->pos.x) * (weapon.worldPos.x - pItem->pos.x)
+						+ (weapon.worldPos.y - pItem->pos.y) * (weapon.worldPos.y - pItem->pos.y) * 2
+						+ (weapon.worldPos.z - pItem->pos.z) * (weapon.worldPos.z - pItem->pos.z);
+					if (fLength < (weapon.fRadius + pItem->fRadius) * (weapon.fRadius + pItem->fRadius))
+					{
+						for (int i = 0; i < 30; i++, Box_Effect++,Particle++)
+						{
+							SetBox_Effect(pItem->pos, Box_Effect->move, D3DXCOLOR(0.8f, 0.7f, 0.2f, 1.0f), 20.0f, 20.0f, 100);
+							SetParticle(pItem->pos, Particle->move, D3DXCOLOR(1.0f, 1.0f, 1.0f, 0.5f), 20.0f, 20.0f, 50);
+							SetBezier_Particle(pItem->pos);
+							SetExplosion(pItem->pos, 10.0f, 10.0f);
+						}
+
+						// スコア加算
+						pItem->bUse = false;
+						// SE再生
+						//PlaySound(SOUND_LABEL_SE_COIN);
+					}
 				}
 			}
 		}
+		if (GetKeyboardRelease(DIK_P))
+		{
+			weapon.rot.x += 15.0f;
+
+		}
+
 	}
 	g_player.pos.y = Get(g_player.pos);
 	weapon.pos.y = Get(weapon.pos);
-
 }
 
 //=============================================================================
@@ -459,7 +500,7 @@ void DrawPlayer_Sword(void)
 	D3DXMatrixMultiply(&mtxWorldWeapon, &mtxWorldWeapon, &mtxScl);
 
 	// 回転を反映
-	D3DXMatrixRotationYawPitchRoll(&mtxRot, 3.4f, 0.0f, 0.0f);
+	D3DXMatrixRotationYawPitchRoll(&mtxRot, weapon.rot.x, 0.0, weapon.rot.z);
 	D3DXMatrixMultiply(&mtxWorldWeapon, &mtxWorldWeapon, &mtxRot);
 
 	// 移動を反映
@@ -469,7 +510,7 @@ void DrawPlayer_Sword(void)
 
 	//胴体(親)のワールドマトリクスのワールドマトリクスをかける
 	D3DXMatrixMultiply(&mtxWorldWeapon, &mtxWorldWeapon, GetPlayerWorldMatrix());
-
+	D3DXVec3TransformCoord(&weapon.worldPos, &weapon.pos, &mtxWorldWeapon);
 
 
 	// ワールドマトリックスの設定

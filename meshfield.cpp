@@ -89,7 +89,7 @@ HRESULT InitMeshField(D3DXVECTOR3 pos, D3DXVECTOR3 rot,
 												D3DUSAGE_WRITEONLY,					// 頂点バッファの使用法　
 												D3DFMT_INDEX16,						// 使用するインデックスフォーマット
 												D3DPOOL_MANAGED,					// リソースのバッファを保持するメモリクラスを指定
-												&D3DIdxBuffField,				// インデックスバッファインターフェースへのポインタ
+												&D3DIdxBuffField,					// インデックスバッファインターフェースへのポインタ
 												NULL)))								// NULLに設定
 	{
         return E_FAIL;
@@ -162,7 +162,7 @@ HRESULT InitMeshField(D3DXVECTOR3 pos, D3DXVECTOR3 rot,
 				nCntIdx++;
 			}
 		}
-
+#if 1
 		// フラクタル理論　断層フラクタル　ランダム地形生成
 		for (int nCntVtxX = 0; nCntVtxX < (NumBlockXField + 1); nCntVtxX++)
 		{
@@ -205,6 +205,7 @@ HRESULT InitMeshField(D3DXVECTOR3 pos, D3DXVECTOR3 rot,
 			}
 			D3DIdxBuffField->Unlock();
 		}
+#endif
 		// インデックスデータをアンロックする
 		D3DIdxBuffField->Unlock();
 	}

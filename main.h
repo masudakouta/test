@@ -85,5 +85,6 @@ void SetMode(MODE mode);
 MODE GetMode(void);
 int GetEnemyStage(void);
 void Set_Stage(int stage);
+void InitGameGame(void);
 
 #endif

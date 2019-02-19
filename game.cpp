@@ -18,9 +18,11 @@
 #include "timer.h"
 #include "score.h"
 #include "item.h"
-#include "sound.h"
-#include "gorl.h"
 #include "box_effect.h"
+#include "particle.h"
+#include "bezier_particle.h"
+#include "score_effect.h"
+#include "sound.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -34,12 +36,14 @@
 // グローバル変数
 //*****************************************************************************
 
-
+LPDIRECTSOUNDBUFFER8 music;
 //=============================================================================
 // 初期化処理
 //=============================================================================
 HRESULT InitGame(void)
 {
+
+	music = LoadSound(BGM_00);
 	// ライトの初期化
 	InitLight();
 
@@ -72,9 +76,6 @@ HRESULT InitGame(void)
 	// 影の初期化
 	InitShadow();
 
-	//ゴールの初期化
-	InitGorl();
-
 	// プレイヤーの初期化
 	InitPlayer();
 	// 弾の初期化
@@ -86,19 +87,21 @@ HRESULT InitGame(void)
 	// エフェクトの初期化
 	InitEffect();
 	InitBox_Effect();
+	InitParticle();
+	InitScoreEffect(0);
 	// ライフの初期化
 	InitLife();
 
 	// タイマーの初期化
 	InitTimer();
-	ResetTimer(30);
+	ResetTimer(180);
 
 	// スコアの初期化
 	InitScore();
 
 	// アイテムの初期化
 	InitItem(0);
-	for(int nCntCoin = 0; nCntCoin < 4; nCntCoin++)
+	for(int nCntCoin = 0; nCntCoin < 50; nCntCoin++)
 	{
 		float fPosX, fPosY, fPosZ;
 
@@ -109,8 +112,9 @@ HRESULT InitGame(void)
 		SetItem(D3DXVECTOR3(fPosX, fPosY, fPosZ),  D3DXVECTOR3(0.0f, 0.0f, 0.0f), ITEMTYPE_COIN); 
 	}
 
+	//InitSound(hWnd);
 	// BGM再生
-	//PlaySound(SOUND_LABEL_BGM000);
+	PlaySound(music, E_DS8_FLAG_LOOP);
 
 	return S_OK;
 }
@@ -125,9 +129,6 @@ void UninitGame(void)
 
 	// カメラの終了処理
 	UninitCamera();
-
-	// ゴールの終了処理
-	UninitGorl();
 
 	// 地面の終了処理
 	UninitMeshField();
@@ -149,6 +150,8 @@ void UninitGame(void)
 	// エフェトの終了処理
 	UninitEffect();
 	UninitBox_Effect();
+	UninitParticle();
+	UninitScoreEffect();
 	// ライフの終了処理
 	UninitLife();
 
@@ -184,8 +187,6 @@ void UpdateGame(void)
 
 	// プレイヤー処理の更新
 	UpdatePlayer();
-	// ゴール処理の更新
-	UpdateGorl();
 
 	// 弾処理の更新
 	UpdateBullet();
@@ -196,7 +197,8 @@ void UpdateGame(void)
 	// エフェクト処理の更新
 	UpdateEffect();
 	UpdateBox_Effect();
-
+	UpdateParticle();
+	UpdateScoreEffect();
 	// ライフ処理の更新
 	UpdateLife();
 
@@ -221,14 +223,12 @@ void DrawGame(void)
 	// 地面処理の描画
 	DrawMeshField();
 
-	// ゴールの描画
-	DrawGorl();
-
 	// 影処理の描画
 	DrawShadow();
 
 	// プレイヤー処理の描画
 	DrawPlayer();
+
 	// アイテム処理の描画
 	DrawItem();
 
@@ -243,7 +243,10 @@ void DrawGame(void)
 
 	// エフェクト処理の描画
 	DrawEffect();
+	DrawParticle();
 	DrawBox_Effect();
+	DrawBezier_Particle();
+	DrawScoreEffect();
 	// ライフ処理の描画
 	DrawLife();
 

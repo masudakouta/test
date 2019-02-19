@@ -21,4 +21,6 @@ void SetCamera(void);
 D3DXVECTOR3 GetRotCamera(void);
 D3DXMATRIX GetMtxView(void);
 
+D3DXVECTOR3* CalcScreenToWorld(D3DXVECTOR3* pout,int Sx,int Sy,float fZ,int Screen_w,int Screen_h,D3DXMATRIX* View,D3DXMATRIX* Prj);
+
 #endif

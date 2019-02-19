@@ -5,12 +5,14 @@
 //
 //=============================================================================
 #include "score.h"
+#include "camera.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define	TEXTURE_SCORE		"data/TEXTURE/number000.png"	// 読み込むテクスチャファイル名
-#define	TEXTURE_FRAME_SCORE	"data/TEXTURE/frame_score.png"	// 読み込むテクスチャファイル名
+#define	TEXTURE_SCORE		"data/TEXTURE/time.jpg"	// 読み込むテクスチャファイル名
+#define	TEXTURE_SCORE_MARU	"data/TEXTURE/tama.png"	// 読み込むテクスチャファイル名
+#define	TEXTURE_FRAME_SCORE	"data/TEXTURE/tama.png"	// 読み込むテクスチャファイル名
 #define	SCORE_SIZE_X		(35.0f)							// スコアの数字の幅
 #define	SCORE_SIZE_Y		(50.0f)							// スコアの数字の高さ
 #define	SCORE_INTERVAL_X	(0.0f)							// スコアの数字の表示間隔
@@ -29,14 +31,10 @@ void SetTextureScore(int idx, int number);
 //*****************************************************************************
 // グローバル変数宣言
 //*****************************************************************************
-LPDIRECT3DTEXTURE9		g_pD3DTextureScore[2] = {};	// テクスチャへのポインタ
+LPDIRECT3DTEXTURE9		g_pD3DTextureScore[3] = {};	// テクスチャへのポインタ
 LPDIRECT3DVERTEXBUFFER9 g_pD3DVtxBuffScore = NULL;		// 頂点バッファインターフェースへのポインタ
-
-D3DXVECTOR3				g_posScore;						// 位置
-D3DXVECTOR3				g_rotScore;						// 向き
-
-int						g_score;						// スコア
-
+	int						g_score;						// スコア
+SCORE						Score;
 //=============================================================================
 // 初期化処理
 //=============================================================================
@@ -44,8 +42,8 @@ HRESULT InitScore(void)
 {
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
-	g_posScore = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	g_rotScore = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	Score.pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	Score.rot = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 
 	// スコアの初期化
 	g_score = 0;
@@ -54,13 +52,19 @@ HRESULT InitScore(void)
 	MakeVertexScore(pDevice);
 
 	// テクスチャの読み込み
-	D3DXCreateTextureFromFile(pDevice,					// デバイスへのポインタ
-								TEXTURE_SCORE,			// ファイルの名前
+	D3DXCreateTextureFromFile(pDevice,						// デバイスへのポインタ
+								TEXTURE_SCORE,				// ファイルの名前
 								&g_pD3DTextureScore[0]);	// 読み込むメモリー
 
-	D3DXCreateTextureFromFile(pDevice,					// デバイスへのポインタ
+	D3DXCreateTextureFromFile(pDevice,						// デバイスへのポインタ
 								TEXTURE_FRAME_SCORE,		// ファイルの名前
 								&g_pD3DTextureScore[1]);	// 読み込むメモリー
+
+															// テクスチャの読み込み
+	D3DXCreateTextureFromFile(pDevice,						// デバイスへのポインタ
+								TEXTURE_SCORE_MARU,			// ファイルの名前
+								&g_pD3DTextureScore[2]);	// 読み込むメモリー
+
 
 	return S_OK;
 }
@@ -79,6 +83,12 @@ void UninitScore(void)
 	{// テクスチャの開放
 		g_pD3DTextureScore[1]->Release();
 		g_pD3DTextureScore[1] = NULL;
+	}
+
+	if (g_pD3DTextureScore[2] != NULL)
+	{// テクスチャの開放
+		g_pD3DTextureScore[2]->Release();
+		g_pD3DTextureScore[2] = NULL;
 	}
 
 	if(g_pD3DVtxBuffScore != NULL)
@@ -108,6 +118,11 @@ void UpdateScore(void)
 void DrawScore(void)
 {
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
+	// αテストを有効に
+	pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+	pDevice->SetRenderState(D3DRS_ALPHAREF, 200.0f);
+	pDevice->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATER);
+
 
 	// 頂点バッファをデバイスのデータストリームにバインド
     pDevice->SetStreamSource(0, g_pD3DVtxBuffScore, 0, sizeof(VERTEX_2D));
@@ -128,7 +143,15 @@ void DrawScore(void)
 	pDevice->SetTexture(0, g_pD3DTextureScore[1]);
 
 	// ポリゴンの描画
-	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (NUM_PLACE * 4), NUM_POLYGON);
+	//pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (NUM_PLACE * 4), NUM_POLYGON);
+
+	// テクスチャの設定
+	//pDevice->SetTexture(0, g_pD3DTextureScore[2]);
+
+	// ポリゴンの描画
+	//pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, (NUM_PLACE * 4), NUM_POLYGON);
+	pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+
 }
 
 //=============================================================================
@@ -179,13 +202,18 @@ HRESULT MakeVertexScore(LPDIRECT3DDEVICE9 pDevice)
 			pVtx[2].tex = D3DXVECTOR2(0.0f, 1.0f);
 			pVtx[3].tex = D3DXVECTOR2(0.1f, 1.0f);
 		}
-
+		//フレーム
 		{
 			// 頂点座標の設定
-			pVtx[0].vtx = D3DXVECTOR3(SCORE_POS_X - 15, SCORE_POS_Y-25, 0.0f);
-			pVtx[1].vtx = D3DXVECTOR3(SCORE_POS_X + (SCORE_INTERVAL_X + SCORE_SIZE_X) * NUM_PLACE + 15, SCORE_POS_Y-25, 0.0f);
-			pVtx[2].vtx = D3DXVECTOR3(SCORE_POS_X - 15, SCORE_POS_Y + 55, 0.0f);
-			pVtx[3].vtx = D3DXVECTOR3(SCORE_POS_X + (SCORE_INTERVAL_X + SCORE_SIZE_X) * NUM_PLACE + 15, SCORE_POS_Y + 55, 0.0f);
+			pVtx[0].vtx = D3DXVECTOR3(50.0f - 25, 0.0f - 25, 0.0f);
+			pVtx[1].vtx = D3DXVECTOR3(50.0f + 190, 0.0f - 25, 0.0f);
+			pVtx[2].vtx = D3DXVECTOR3(50.0f - 25, 0.0f + 195, 0.0f);
+			pVtx[3].vtx = D3DXVECTOR3(50.0f + 190, 0.0f + 195, 0.0f);
+
+			//pVtx[0].vtx = D3DXVECTOR3(90.0f, 70.0f, 0.0f);
+			//pVtx[1].vtx = D3DXVECTOR3(90.0f, 70.0f, 0.0f);
+			//pVtx[2].vtx = D3DXVECTOR3(90.0f, 70.0f, 0.0f);
+			//pVtx[3].vtx = D3DXVECTOR3(SCORE_POS_X + (SCORE_INTERVAL_X + SCORE_SIZE_X) * NUM_PLACE + 15, SCORE_POS_Y + 55, 0.0f);
 
 			// rhwの設定
 			pVtx[0].rhw =
@@ -194,16 +222,19 @@ HRESULT MakeVertexScore(LPDIRECT3DDEVICE9 pDevice)
 			pVtx[3].rhw = 1.0f;
 
 			// 反射光の設定
-			pVtx[0].diffuse = D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f);
-			pVtx[1].diffuse = D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f);
-			pVtx[2].diffuse = D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f);
-			pVtx[3].diffuse = D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f);
+			pVtx[0].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+			pVtx[1].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+			pVtx[2].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+			pVtx[3].diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 
 			// テクスチャ座標の設定
 			pVtx[0].tex = D3DXVECTOR2(0.0f, 0.0f);
 			pVtx[1].tex = D3DXVECTOR2(1.0f, 0.0f);
 			pVtx[2].tex = D3DXVECTOR2(0.0f, 1.0f);
 			pVtx[3].tex = D3DXVECTOR2(1.0f, 1.0f);
+		}
+		//玉
+		{
 		}
 
 		// 頂点データをアンロックする
@@ -251,7 +282,7 @@ void ChangeScore(int value)
 	}
 }
 
-D3DXVECTOR3 GetScore(void)
+SCORE *GetScore(void)
 {
-	return g_posScore;
+	return &Score;
 }

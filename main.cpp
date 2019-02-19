@@ -10,16 +10,32 @@
 #include "game.h"
 #include "result.h"
 #include "fade.h"
-#include "sound.h"
 #include "camera.h"
 #include "light.h"
 #include "bezier_particle.h"
+#include "game.h"
+#include "light.h"
+#include "camera.h"
+#include "meshfield.h"
+#include "meshwall.h"
+#include "player.h"
+#include "shadow.h"
+#include "bullet.h"
+#include "effect.h"
+#include "explosion.h"
+#include "life.h"
+#include "timer.h"
+#include "score.h"
+#include "item.h"
+#include "box_effect.h"
+#include "particle.h"
+#include "sound.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 #define CLASS_NAME		"AppClass"			// ウインドウのクラス名
-#define WINDOW_NAME		"Bioody Girl  3D"		// ウインドウのキャプション名
+#define WINDOW_NAME		"Bloody Girl  3D"		// ウインドウのキャプション名
 
 //*****************************************************************************
 // 構造体定義
@@ -315,13 +331,13 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ライトの初期化
 	InitLight();
 	// サウンドの初期化
-	//InitSound(hWnd);
+	InitSound(hWnd);
 
 	//ベジェパーティクルの初期化
-	InitParticle();
+	InitBezier_Particle();
 	// 最初はタイトル画面に
 	SetMode(MODE_TITLE);
-
+	InitTitle();
 	return S_OK;
 }
 
@@ -353,13 +369,13 @@ void Uninit(void)
 	// フェードの終了処理
 	UninitFade();
 
-	// サウンドの終了処理
+	 //サウンドの終了処理
 	//UninitSound();
 
 	// 入力処理の終了処理
 	UninitInput();
 
-	UninitParticle();
+	UninitBezier_Particle();
 }
 
 //=============================================================================
@@ -378,7 +394,7 @@ void Update(void)
 
 	case MODE_GAME:			// ゲーム画面の更新
 		UpdateGame();
-		UpdateParticle();
+		UpdateBezier_Particle();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の更新
@@ -396,7 +412,7 @@ void Update(void)
 void Draw(void)
 {
 	// バックバッファ＆Ｚバッファのクリア
-	g_pD3DDevice->Clear(0, NULL, (D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER), D3DCOLOR_RGBA(128, 128, 255, 0), 1.0f, 0);
+	g_pD3DDevice->Clear(0, NULL, (D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER), D3DCOLOR_RGBA(0, 0, 0, 0), 1.0f, 0);
 
 	// Direct3Dによる描画の開始
 	if(SUCCEEDED(g_pD3DDevice->BeginScene()))
@@ -410,7 +426,6 @@ void Draw(void)
 
 		case MODE_GAME:			// ゲーム画面の描画
 			DrawGame();
-			DrawParticle();
 			break;
 
 		case MODE_RESULT:		// リザルト画面の描画
@@ -466,7 +481,7 @@ void SetMode(MODE mode)
 
 		// ゲーム画面の初期化
 		InitGame();
-		InitParticle();
+		InitBezier_Particle();
 
 		break;
 
@@ -476,6 +491,7 @@ void SetMode(MODE mode)
 
 		// リザルト画面の初期化
 		InitResult();
+		InitGame();
 
 		break;
 	}
@@ -498,7 +514,7 @@ void DrawFPS(void)
 	RECT rect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 	char str[256];
 
-	wsprintf(str, "FPS:%d\n", g_nCountFPS);
+	wsprintf(str, "", g_nCountFPS);
 
 	// テキスト描画
 	g_pD3DXFont->DrawText(NULL, str, -1, &rect, DT_LEFT, D3DCOLOR_ARGB(0xff, 0xff, 0xff, 0xff));

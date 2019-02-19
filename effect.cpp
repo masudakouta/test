@@ -137,32 +137,6 @@ void UpdateEffect(void)
 
 	}
 
-	// パーティクル発生
-	//if((rand() % 2) == 0)
-	//{
-	//	D3DXVECTOR3 pos;
-	//	D3DXVECTOR3 move;
-	//	float fAngle, fLength;
-	//	int nLife;
-	//	float fSize;
-
-	//	fAngle = (float)(rand() % 628 - 314) / 0.0f;
-	//	move.x = sinf(fAngle) * fLength;
-	//	move.y = /*rand() % 300 /*/ 1.0f;
-	//	move.z = cosf(fAngle) * fLength + 30.0f;
-
-	//	nLife = rand() % 100 + 150;
-
-	//	fSize = /*(float)(rand() % 30 +*/ 20/*)*/;
-
-	//	pos.y = fSize / 2;
-	//	if (GetKeyboardPress(DIK_M))
-	//	{
-	//		// //ビルボードの設定
-	//		SetEffect(pos, move, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f), fSize, fSize, nLife);
-	//	}
-	//}
-
 }
 
 //=============================================================================
@@ -239,11 +213,8 @@ void DrawEffect(void)
 	pDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
 	pDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);				// Z比較あり
 
-	pDevice->SetRenderState(D3DRS_FOGENABLE, TRUE);								// 
+	pDevice->SetRenderState(D3DRS_FOGENABLE, TRUE);
 
-//	pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
-//	pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-//	pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
 }
 
 //=============================================================================

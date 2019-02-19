@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// アイテム処理 [item.cpp]
+// アイテム処理 [enemy.cpp]
 // Author : 増田光汰
 //
 //=============================================================================
@@ -26,7 +26,7 @@
 LPDIRECT3DTEXTURE9	g_pD3DTextureItem[ITEMTYPE_MAX];	// テクスチャ読み込み場所
 LPD3DXMESH			g_pMeshItem[ITEMTYPE_MAX];			// ID3DXMeshインターフェイスへのポインタ
 LPD3DXBUFFER		g_pD3DXMatBuffItem[ITEMTYPE_MAX];	// メッシュのマテリアル情報を格納
-DWORD				g_aNumMatItem[ITEMTYPE_MAX];			// 属性情報の総数
+DWORD				g_aNumMatItem[ITEMTYPE_MAX];		// 属性情報の総数
 
 D3DXMATRIX			g_mtxWorldItem;				// ワールドマトリックス
 
@@ -35,7 +35,7 @@ ITEM				g_aItem[MAX_ITEM];			// アイテムワーク
 const char *c_aFileNameItem[ITEMTYPE_MAX] =
 {
 	"data/MODEL/zombie.x",		// コイン
-	"data/MODEL/zombieee.png",		// ライフ
+	"data/MODEL/zombieee.png",	// ライフ
 	"data/MODEL/item002.x"		// タイマー
 };
 

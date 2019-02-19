@@ -10,7 +10,7 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define	TEXTURE_TIMER		"data/TEXTURE/number000.png"	// 読み込むテクスチャファイル名
+#define	TEXTURE_TIMER		"data/TEXTURE/time.jpg"	// 読み込むテクスチャファイル名
 #define	TEXTURE_FRAME_TIMER	"data/TEXTURE/frame_timer.png"	// 読み込むテクスチャファイル名
 #define	TIMER_SIZE_X		(35.0f)							// タイマーの数字の幅
 #define	TIMER_SIZE_Y		(50.0f)							// タイマーの数字の高さ

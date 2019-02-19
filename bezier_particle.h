@@ -18,6 +18,7 @@ typedef struct
 	D3DXVECTOR3 scale;		// スケール
 	D3DXVECTOR3 move;		// 移動量
 	D3DXCOLOR col;			// 色
+	int		frame;			// 到達フレーム
 	float fSizeX;			// 幅
 	float fSizeY;			// 高さ
 	int nIdxShadow;			// 影ID
@@ -34,11 +35,11 @@ typedef struct
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-HRESULT InitParticle(void);
-void UninitParticle(void);
-void UpdateParticle(void);
-void DrawParticle(void);
+HRESULT InitBezier_Particle(void);
+void UninitBezier_Particle(void);
+void UpdateBezier_Particle(void);
+void DrawBezier_Particle(void);
 //BEZIER_PARTICLEH *GetBox_Effect(int pno);
-void SetParticle(D3DXVECTOR3 pos);
-BEZIER_PARTICLEH *GetParticle(void);
+void SetBezier_Particle(D3DXVECTOR3 pos);
+BEZIER_PARTICLEH *GetBezier_Particle(void);
 #endif

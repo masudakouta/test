@@ -1,6 +1,6 @@
 //=============================================================================
 //
-// パーティクル処理 [particle.cpp]
+// ベジェ＿パーティクル処理 [bezier_particle.cpp]
 // Author : 増田　光汰
 //
 //=============================================================================
@@ -8,22 +8,23 @@
 #include "camera.h"
 #include "score.h"
 #include "player.h"
-
+#include "particle.h"
+#include "score_effect.h"
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 #define	TEXTURE_PARTICLE	"data/TEXTURE/explosionFlare.png"	// 読み込むテクスチャファイル名
-#define	PARTICLE_SIZE_X		(5.0f)							// ビルボードの幅
-#define	PARTICLE_SIZE_Y		(5.0f)							// ビルボードの高さ
-#define	VALUE_MOVE_PARTICLE	(2.0f)							// 移動速度
+#define	PARTICLE_SIZE_X		(5.0f)								// ビルボードの幅
+#define	PARTICLE_SIZE_Y		(5.0f)								// ビルボードの高さ
+#define	VALUE_MOVE_PARTICLE	(2.0f)								// 移動速度
 
-#define	MAX_PARTICLE			(512)						// ビルボード最大数
+#define	MAX_PARTICLE			(512)							// ビルボード最大数
 
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-HRESULT MakeVertexParticle(LPDIRECT3DDEVICE9 Device);
-void SetVertexParticle(int nIdxBullet, float fSizeX, float fSizeY);
+HRESULT MakeVertexBezier_Particle(LPDIRECT3DDEVICE9 Device);
+void SetVertexBezier_Particle(int nIdxBullet, float fSizeX, float fSizeY);
 
 //*****************************************************************************
 // グローバル変数
@@ -32,18 +33,18 @@ LPDIRECT3DTEXTURE9		D3DTextureParticle = NULL;			// テクスチャへのポインタ
 LPDIRECT3DVERTEXBUFFER9 D3DVtxBuffParticle = NULL;			// 頂点バッファインターフェースへのポインタ
 D3DXMATRIX				mtxWorldParticle;					// ワールドマトリックス
 
-BEZIER_PARTICLEH		Particle[MAX_PARTICLE];				// パーティクルワーク
+BEZIER_PARTICLEH		Bezier_Particle[MAX_PARTICLE];				// パーティクルワーク
 static int				PTAlpha;							// アルファテストの閾値
 
 //=============================================================================
 // 初期化処理
 //=============================================================================
-HRESULT InitParticle(void)
+HRESULT InitBezier_Particle(void)
 {
 	LPDIRECT3DDEVICE9 Device = GetDevice();
 
 	// 頂点情報の作成
-	MakeVertexParticle(Device);
+	MakeVertexBezier_Particle(Device);
 
 	// テクスチャの読み込み
 	D3DXCreateTextureFromFile(Device,		// デバイスへのポインタ
@@ -52,13 +53,13 @@ HRESULT InitParticle(void)
 
 	for (int CntParticle = 0; CntParticle < MAX_PARTICLE; CntParticle++)
 	{
-		Particle[CntParticle].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-		Particle[CntParticle].rot = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-		Particle[CntParticle].scale = D3DXVECTOR3(1.0f, 1.0f, 1.0f);
-		Particle[CntParticle].move = D3DXVECTOR3(1.0f, 1.0f, 1.0f);
-		Particle[CntParticle].fSizeX = PARTICLE_SIZE_X;
-		Particle[CntParticle].fSizeY = PARTICLE_SIZE_Y;
-		Particle[CntParticle].bUse = false;
+		Bezier_Particle[CntParticle].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		Bezier_Particle[CntParticle].rot = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		Bezier_Particle[CntParticle].scale = D3DXVECTOR3(0.2f, 0.2f, 0.2f);
+		Bezier_Particle[CntParticle].move = D3DXVECTOR3(1.0f, 1.0f, 1.0f);
+		Bezier_Particle[CntParticle].fSizeX = PARTICLE_SIZE_X;
+		Bezier_Particle[CntParticle].fSizeY = PARTICLE_SIZE_Y;
+		Bezier_Particle[CntParticle].bUse = false;
 	}
 
 	return S_OK;
@@ -67,7 +68,7 @@ HRESULT InitParticle(void)
 //=============================================================================
 // 終了処理
 //=============================================================================
-void UninitParticle(void)
+void UninitBezier_Particle(void)
 {
 	if (D3DTextureParticle != NULL)
 	{// テクスチャの開放
@@ -85,29 +86,84 @@ void UninitParticle(void)
 //=============================================================================
 // 更新処理
 //=============================================================================
-void UpdateParticle(void)
+void UpdateBezier_Particle(void)
 {
 	D3DXVECTOR3 GetPositionPlayer();
-	for (int CntParticle = 0; CntParticle < MAX_PARTICLE; CntParticle++)
+	PARTICLE *Particle = GetParticlet(0);
+
+	/*ここからスクリーン座標変換のプログラム*/
+	/*カーソルの位置をワールド座標へ変換*/
+
+	LPDIRECT3DDEVICE9 pDevice = GetDevice();
+
+	//ビュー行列、プロジェクション行列、ビューポート行列
+	D3DXMATRIX mtxView, mtxProjection, mtxViewPort;
+
+	//ビューポート行列を作成
+	D3DXMatrixIdentity(&mtxViewPort);										//初期化
+	mtxViewPort._11 = SCREEN_WIDTH / 2.0f;									//各成分をスクリーンサイズから計算
+	mtxViewPort._22 = -SCREEN_HEIGHT / 2.0f;
+	mtxViewPort._41 = SCREEN_WIDTH / 2.0f;
+	mtxViewPort._42 = SCREEN_HEIGHT / 2.0f;
+
+	//プロジェクション行列取得
+	pDevice->GetTransform(D3DTS_PROJECTION, &mtxProjection);
+
+	//ビュー行列取得
+	pDevice->GetTransform(D3DTS_VIEW, &mtxView);
+
+	//ビュー逆行列、プロジェクション逆行列、ビューポート行列
+	D3DXMATRIX invView, invProjection, invViewport;
+
+	//逆行列を作成
+	D3DXMatrixInverse(&invView, NULL, &mtxView);
+	D3DXMatrixInverse(&invProjection, NULL, &mtxProjection);
+	D3DXMatrixInverse(&invViewport, NULL, &mtxViewPort);
+
+	//カーソル座標を取得(実際はここの部分をスコアのスクリーン座標に置き換える)
+	SCORE *Score;
+	Score = GetScore();												//カーソルのスクリーン座標を取得
+	D3DXVECTOR3 screenPos = D3DXVECTOR3(937, 70, 0.0f);		//D3DXVECTOR3型に変換
+
+	//カーソルのスクリーン座標をワールド座標に変換
+	D3DXVECTOR3 worldPos;												//変換後のワールド座標を格納する変数
+	D3DXMATRIX temp = invViewport * invProjection * invView;			//変換する行列を作成
+	D3DXVec3TransformCoord(&worldPos, &screenPos, &temp);				//スクリーン座標を変換行列でワールド座標へ変換
+
+
+	for (int CntParticle = 0; CntParticle < MAX_PARTICLE; CntParticle++, Particle++)
 	{
-		if (Particle[CntParticle].bUse)
+		if (Bezier_Particle[CntParticle].bUse)
 		{
-			Particle[CntParticle].cntFrame++;
-			float t = (float)Particle[CntParticle].cntFrame / 60.0f;
+			Bezier_Particle[CntParticle].cntFrame++;
+			float t = (float)Bezier_Particle[CntParticle].cntFrame / Bezier_Particle[CntParticle].frame;
 			//n乗を求める関数 powf(1-t, n))
-			D3DXVECTOR3 p0 = (1 - t) * (1 - t) * (1 - t) * Particle[CntParticle].start;
-			D3DXVECTOR3 p1 = 3 * (1 - t) * (1 - t) * t * Particle[CntParticle].control1;
-			D3DXVECTOR3 p2 = 3 * (1 - t) * t * t * Particle[CntParticle].control2;
-			D3DXVECTOR3 p3 = t * t * t *GetPositionPlayer()/*D3DXVECTOR3(0.0f, 0.0f, 0.0f)*/;//
-			Particle[CntParticle].pos = p0 + p1 + p2 + p3;
+			D3DXVECTOR3 p0 = (1 - t) * (1 - t) * (1 - t) * Bezier_Particle[CntParticle].start;
+			D3DXVECTOR3 p1 = 3 * (1 - t) * (1 - t) * t * Bezier_Particle[CntParticle].control1;
+			D3DXVECTOR3 p2 = 3 * (1 - t) * t * t * Bezier_Particle[CntParticle].control2;
+			D3DXVECTOR3 p3 = t * t * t * worldPos;
+			Bezier_Particle[CntParticle].pos = p0 + p1 + p2 + p3;
+
+			//for (int i = 0; i < 5; i++, Particle++)
+			//{
+				if (Bezier_Particle[CntParticle].pos == worldPos)
+				{
+					//SetParticle(worldPos, Particle->move, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f), 20.0f, 20.0f, 10);
+					Bezier_Particle[CntParticle].bUse = false;
+					SetScoreEffect(D3DXVECTOR3(937.0f,70.0f,0.0f));
+					ChangeScore(1);
+
+				}
+			//}
 		}
 	}
+
 }
 
 //=============================================================================
 // 描画処理
 //=============================================================================
-void DrawParticle(void)
+void DrawBezier_Particle(void)
 {
 	LPDIRECT3DDEVICE9 Device = GetDevice();
 	D3DXMATRIX mtxView, mtxScale, mtxTranslate;
@@ -138,30 +194,17 @@ void DrawParticle(void)
 
 	for (int CntParticle = 0; CntParticle < MAX_PARTICLE; CntParticle++)
 	{
-		if (Particle[CntParticle].bUse)
+		if (Bezier_Particle[CntParticle].bUse)
 		{
 			// ワールドマトリックスの初期化
 			D3DXMatrixIdentity(&mtxWorldParticle);
 
-			// ビューマトリックスを取得
-			//mtxView = GetMtxView();
-
-			//mtxWorldParticle._11 = mtxView._11;
-			//mtxWorldParticle._12 = mtxView._21;
-			//mtxWorldParticle._13 = mtxView._31;
-			//mtxWorldParticle._21 = mtxView._12;
-			//mtxWorldParticle._22 = mtxView._22;
-			//mtxWorldParticle._23 = mtxView._32;
-			//mtxWorldParticle._31 = mtxView._13;
-			//mtxWorldParticle._32 = mtxView._23;
-			//mtxWorldParticle._33 = mtxView._33;
-
 			// スケールを反映
-			D3DXMatrixScaling(&mtxScale, Particle[CntParticle].scale.x, Particle[CntParticle].scale.y, Particle[CntParticle].scale.z);
+			D3DXMatrixScaling(&mtxScale, Bezier_Particle[CntParticle].scale.x, Bezier_Particle[CntParticle].scale.y, Bezier_Particle[CntParticle].scale.z);
 			D3DXMatrixMultiply(&mtxWorldParticle, &mtxWorldParticle, &mtxScale);
 
 			// 移動を反映
-			D3DXMatrixTranslation(&mtxTranslate, Particle[CntParticle].pos.x, Particle[CntParticle].pos.y, Particle[CntParticle].pos.z);
+			D3DXMatrixTranslation(&mtxTranslate, Bezier_Particle[CntParticle].pos.x, Bezier_Particle[CntParticle].pos.y, Bezier_Particle[CntParticle].pos.z);
 			D3DXMatrixMultiply(&mtxWorldParticle, &mtxWorldParticle, &mtxTranslate);
 
 			// ワールドマトリックスの設定
@@ -192,6 +235,7 @@ void DrawParticle(void)
 	//Z比較を戻す
 	Device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
 
+	// フォグの設定
 	Device->SetRenderState(D3DRS_FOGENABLE, TRUE);
 
 }
@@ -199,14 +243,14 @@ void DrawParticle(void)
 //=============================================================================
 // 頂点情報の作成
 //=============================================================================
-HRESULT MakeVertexParticle(LPDIRECT3DDEVICE9 Device)
+HRESULT MakeVertexBezier_Particle(LPDIRECT3DDEVICE9 Device)
 {
 	// オブジェクトの頂点バッファを生成
 	if (FAILED(Device->CreateVertexBuffer(sizeof(VERTEX_3D) * NUM_VERTEX * MAX_PARTICLE,	// 頂点データ用に確保するバッファサイズ(バイト単位)
 		D3DUSAGE_WRITEONLY,							// 頂点バッファの使用法　
 		FVF_VERTEX_3D,								// 使用する頂点フォーマット
 		D3DPOOL_MANAGED,							// リソースのバッファを保持するメモリクラスを指定
-		&D3DVtxBuffParticle,					// 頂点バッファインターフェースへのポインタ
+		&D3DVtxBuffParticle,						// 頂点バッファインターフェースへのポインタ
 		NULL)))										// NULLに設定
 	{
 		return E_FAIL;
@@ -256,7 +300,7 @@ HRESULT MakeVertexParticle(LPDIRECT3DDEVICE9 Device)
 //=============================================================================
 // 頂点座標の設定
 //=============================================================================
-void SetVertexParticle(int nIdxParticle, float fSizeX, float fSizeY)
+void SetVertexBezier_Particle(int nIdxParticle, float fSizeX, float fSizeY)
 {
 	{//頂点バッファの中身を埋める
 		VERTEX_3D *pVtx;
@@ -281,7 +325,7 @@ void SetVertexParticle(int nIdxParticle, float fSizeX, float fSizeY)
 //=============================================================================
 // 頂点カラーの設定
 //=============================================================================
-void SetColorParticle(int nIdxParticle, D3DXCOLOR col)
+void SetColorBezier_Particle(int nIdxParticle, D3DXCOLOR col)
 {
 	{//頂点バッファの中身を埋める
 		VERTEX_3D *pVtx;
@@ -305,27 +349,30 @@ void SetColorParticle(int nIdxParticle, D3DXCOLOR col)
 //=============================================================================
 // 頂点情報の作成
 //=============================================================================
-void SetParticle(D3DXVECTOR3 pos)
+void SetBezier_Particle(D3DXVECTOR3 pos)
 {
 	//未使用を目指す
 	for (int CntParticle = 0; CntParticle < MAX_PARTICLE; CntParticle++)
 	{
 
-		if (!Particle[CntParticle].bUse)
+		if (!Bezier_Particle[CntParticle].bUse)
 		{
 
-			Particle[CntParticle].start = pos;
-			Particle[CntParticle].control1 = D3DXVECTOR3(-10.0f, 50.0f, 0.0f) + pos;
-			Particle[CntParticle].control2 = D3DXVECTOR3(10.0f, 50.0f, 0.0f) + pos;
-			Particle[CntParticle].cntFrame = 0;
-			Particle[CntParticle].bUse = true;
+			Bezier_Particle[CntParticle].start = pos;
+			Bezier_Particle[CntParticle].control1 = D3DXVECTOR3((float)(rand() % 1200) / 10, 50.0f, (float)(rand() % 1200) / 10) + pos;
+			Bezier_Particle[CntParticle].control2 = D3DXVECTOR3(10.0f, 50.0f, 0.0f) + pos;
+			Bezier_Particle[CntParticle].cntFrame = 0;
+			Bezier_Particle[CntParticle].bUse = true;
+			Bezier_Particle[CntParticle].frame = (rand() % 50) + 80;
 			return;
 
 		}
 	}
 }
-
-BEZIER_PARTICLEH *GetParticle(void)
+//=============================================================================
+// 関数取得
+//=============================================================================
+BEZIER_PARTICLEH *GetBezier_Particle(void)
 {
-	return Particle;
+	return Bezier_Particle;
 }

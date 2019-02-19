@@ -23,7 +23,7 @@ typedef struct
 	int nIdxShadow;			// ‰eID
 	int nLife;				// Žõ–½
 	bool bUse;				// Žg—p‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©
-} PARTICLE;
+} BOX_PARTICLE;
 
 
 //*****************************************************************************
@@ -33,7 +33,7 @@ HRESULT InitBox_Effect(void);
 void UninitBox_Effect(void);
 void UpdateBox_Effect(void);
 void DrawBox_Effect(void);
-PARTICLE *GetBox_Effect(int pno);
+BOX_PARTICLE *GetBox_Effect(int pno);
 int SetBox_Effect(D3DXVECTOR3 pos, D3DXVECTOR3 move, D3DXCOLOR col, float fSizeX, float fSizeY, int nLife);
 
 #endif

@@ -12,7 +12,6 @@
 #include "explosion.h"
 #include "player.h"
 #include "life.h"
-#include "sound.h"
 #include "score.h"
 #include "item.h"
 #include "main.h"
@@ -117,25 +116,13 @@ void UpdateBullet(void)
 {
 	PLAYER *pPlayer;
 	D3DXVECTOR3 rotCamera;
-	PARTICLE *Box_Effect = GetBox_Effect(0);
-
-	// 敵との当たり判定
-
+	BOX_PARTICLE *Box_Effect = GetBox_Effect(0);
 	ITEM *pItem;
 	BEZIER_PARTICLEH *Particle;
-	Particle = GetParticle();
-	//if (cnt == 0)
-	//{
-	//	if (GetStage() >= STAGE_MAX - 1)
-	//	{
-	//		SetStage(STAGE_GAME_WINEND);
-	//		return;
-	//	}
 
-	//	Set_Stage(GetStage() + 1);
-	//	InitEnemy(1, GetStage());
-	//}
-// プレイヤーを取得
+	//ベジェパーティクルを取得
+	Particle = GetBezier_Particle();
+	// プレイヤーを取得
 	pPlayer = GetPlayer();
 	// アイテムを取得
 	pItem = GetItem();
@@ -160,7 +147,7 @@ void UpdateBullet(void)
 					//
 					for (int i = 0; i < 10; i++, Box_Effect++)
 					{
-						SetParticle(g_aBullet[nCntBullet].pos);
+						SetBezier_Particle(g_aBullet[nCntBullet].pos);
 					}
 						if (pPlayer->pos == Particle->pos)
 						{

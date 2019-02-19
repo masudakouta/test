@@ -15,19 +15,19 @@
 //*****************************************************************************
 // グローバル変数
 //*****************************************************************************
-LPDIRECT3DTEXTURE9 D3DTextureField;			// テクスチャ読み込み場所
+LPDIRECT3DTEXTURE9 D3DTextureField;				// テクスチャ読み込み場所
 LPDIRECT3DVERTEXBUFFER9 D3DVtxBuffField;		// 頂点バッファインターフェースへのポインタ
-LPDIRECT3DINDEXBUFFER9 D3DIdxBuffField;		// インデックスバッファインターフェースへのポインタ
+LPDIRECT3DINDEXBUFFER9 D3DIdxBuffField;			// インデックスバッファインターフェースへのポインタ
 
 D3DXMATRIX mtxWorldField;						// ワールドマトリックス
 D3DXVECTOR3 posField;							// ポリゴン表示位置の中心座標
 D3DXVECTOR3 rotField;							// ポリゴンの回転角
 
-int NumBlockXField, NumBlockZField;		// ブロック数
-int NumVertexField;							// 総頂点数	
+int NumBlockXField, NumBlockZField;				// ブロック数
+int NumVertexField;								// 総頂点数	
 int NumVertexIndexField;						// 総インデックス数
 int NumPolygonField;							// 総ポリゴン数
-float BlockSizeXField, BlockSizeZField;	// ブロックサイズ
+float BlockSizeXField, BlockSizeZField;			// ブロックサイズ
 float Xrand, Zrand, Rrand;
 float valField;
 float xMax, zMax, rMax;
